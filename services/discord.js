@@ -200,14 +200,9 @@ class Discord extends Service {
 
   async sync () {
     this.emit('log', 'Syncing Discord service...');
-
     const guilds = this.client.guilds.cache.map(guild => guild);
-    console.debug('guilds cache:', guilds);
-
     this._state.guilds = guilds;
-
     await this.commit();
-
     return this;
   }
 
