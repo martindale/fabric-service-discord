@@ -41,15 +41,22 @@ class Discord extends Service {
         GatewayIntentBits.GuildPresences,
         GatewayIntentBits.MessageContent
       ],
-      secure: false
+      secure: false,
+      state: {
+        channels: {},
+        guilds: {},
+        users: {}
+      }
     }, settings);
 
     // Stores the Discord client
     this.client = new Client(this.settings);
 
+    // Fabric State
     this._state = {
       status: 'STOPPED',
       guilds: {},
+      content: this.settings.state
     };
 
     return this;
@@ -94,9 +101,7 @@ class Discord extends Service {
         reject(exception);
       }).then(() => {
         service.emit('log', 'Discord client started.');
-        const guilds = service.client.guilds.cache.map(guild => guild.id);
-        service._state.guilds = guilds;
-        service.emit('log', `Discord guilds: ${guilds}`);
+        this.syncGuilds();
         resolve(service);
       });
     });
@@ -206,8 +211,46 @@ class Discord extends Service {
     return this;
   }
 
-  _listChannels () {
-    return this.client.channels.cache.keys();
+  async syncAllChannels () {
+    const channels = await this._listChannels();
+    for (let i = 0; i < channels.length; i++) {
+      const channel = channels[i];
+      this._state.content.channels[channel.id] = channel;
+      const members = await this.listChannelMembers(channel.id);
+      // console.debug('channel members:', members);
+    }
+    this.commit();
+    return this;
+  }
+
+  async syncGuilds () {
+    const guilds = await this._listGuilds();
+    for (let i = 0; i < guilds.length; i++) {
+      const guild = guilds[i];
+      this._state.content.guilds[guild.id] = guild;
+    }
+    this.commit();
+    return this;
+  }
+
+  async _listChannels () {
+    const channels = [];
+    const guilds = await this._listGuilds();
+    for (let i = 0; i < guilds.length; i++) {
+      const guild = guilds[i];
+      const these = guild.channels.cache.map(channel => channel);
+      channels.push(...these);
+    }
+    return channels;
+  }
+
+  async _listGuilds () {
+    return this.client.guilds.cache.map(guild => guild);
+  }
+
+  async listChannelMembers (channelID) {
+    const channel = await this.client.channels.fetch(channelID);
+    return Object.values(channel.members);
   }
 
   generateApplicationLink () {
