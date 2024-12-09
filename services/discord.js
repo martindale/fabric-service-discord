@@ -62,6 +62,10 @@ class Discord extends Service {
     return this;
   }
 
+  get channels () {
+    return Object.values(this._state.content.channels);
+  }
+
   get routes () {
     return [{
       handler: this._handleOAuthCallback.bind(this),
@@ -215,7 +219,12 @@ class Discord extends Service {
     const channels = await this._listChannels();
     for (let i = 0; i < channels.length; i++) {
       const channel = channels[i];
-      this._state.content.channels[channel.id] = channel;
+      this._state.content.channels[channel.id] = {
+        id: channel.id,
+        name: channel.name,
+        type: channel.type,
+        guild: channel.guild.id
+      };
       const members = await this.listChannelMembers(channel.id);
       // console.debug('channel members:', members);
     }
@@ -227,7 +236,13 @@ class Discord extends Service {
     const guilds = await this._listGuilds();
     for (let i = 0; i < guilds.length; i++) {
       const guild = guilds[i];
-      this._state.content.guilds[guild.id] = guild;
+      this._state.content.guilds[guild.id] = {
+        id: guild.id,
+        name: guild.name,
+        icon: guild.icon,
+        channels: guild.channels.cache.map(channel => channel.id),
+        members: guild.members.cache.map(member => member.id)
+      };
     }
     this.commit();
     return this;
@@ -246,6 +261,10 @@ class Discord extends Service {
 
   async _listGuilds () {
     return this.client.guilds.cache.map(guild => guild);
+  }
+
+  async _listGuildMembers (guildID) {
+    console.debug('listing guild members:', guildID);
   }
 
   async listChannelMembers (channelID) {
