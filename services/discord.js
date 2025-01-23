@@ -66,6 +66,10 @@ class Discord extends Service {
     return Object.values(this._state.content.channels);
   }
 
+  get guilds () {
+    return Object.values(this._state.content.guilds);
+  }
+
   get routes () {
     return [{
       handler: this._handleOAuthCallback.bind(this),
@@ -267,9 +271,20 @@ class Discord extends Service {
     console.debug('listing guild members:', guildID);
   }
 
+  async listGuildMembers (guildID) {
+    const guild = await this.client.guilds.fetch(guildID);
+    return Object.values(guild.members);
+  }
+
   async listChannelMembers (channelID) {
-    const channel = await this.client.channels.fetch(channelID);
-    return Object.values(channel.members);
+    return new Promise((resolve, reject) => {
+      this.client.channels.fetch(channelID).catch((error) => {
+        console.error('Could not fetch channel:', error);
+      }).then((channel) => {
+        if (!channel) return reject(new Error('Channel not found.'));
+        resolve(Object.values(channel.members));
+      });
+    });
   }
 
   generateApplicationLink () {
