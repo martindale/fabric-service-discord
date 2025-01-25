@@ -24,7 +24,7 @@
   "homepage": "https://github.com/FabricLabs/fabric-discord#readme",
   "dependencies": {
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
-    "discord.js": "14.16.3",
-    "lodash.merge": "4.6.2"
+    "discord.js": "=14.17.3",
+    "lodash.merge": "=4.6.2"
   }
 }
